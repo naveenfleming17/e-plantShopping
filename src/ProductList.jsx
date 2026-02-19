@@ -2,11 +2,15 @@ import React, { useState } from "react";
 import "./ProductList.css";
 import CartItem from "./CartItem";
 
-import { useDispatch } from "react-redux";
-import { addItemToCart } from "./CartSlice"; // <- make sure this matches your CartSlice action name
+import { useDispatch, useSelector } from "react-redux";
+import { addItem } from "./CartSlice";
 
 function ProductList({ onHomeClick }) {
   const dispatch = useDispatch();
+
+  // ✅ Read cart state from Redux and compute total quantity
+  const cartItems = useSelector((state) => state.cart.items);
+  const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const [showCart, setShowCart] = useState(false);
   const [showPlants, setShowPlants] = useState(true); // show products by default
@@ -48,16 +52,14 @@ function ProductList({ onHomeClick }) {
           name: "Rubber Plant",
           image:
             "https://cdn.pixabay.com/photo/2020/02/15/11/49/flower-4850729_1280.jpg",
-          description:
-            "Easy to care for and effective at removing toxins.",
+          description: "Easy to care for and effective at removing toxins.",
           cost: "$17",
         },
         {
           name: "Aloe Vera",
           image:
             "https://cdn.pixabay.com/photo/2018/04/02/07/42/leaf-3283175_1280.jpg",
-          description:
-            "Purifies the air and has healing properties for skin.",
+          description: "Purifies the air and has healing properties for skin.",
           cost: "$14",
         },
       ],
@@ -305,19 +307,9 @@ function ProductList({ onHomeClick }) {
     setShowPlants(true);
   };
 
-  // ✅ Add to Cart functionality
+  // ✅ Add to Cart functionality (dispatch addItem)
   const handleAddToCart = (plant) => {
-    // Convert "$15" -> 15 for calculations in cart
-    const numericPrice = Number(String(plant.cost).replace("$", ""));
-
-    dispatch(
-      addItemToCart({
-        ...plant,
-        id: plant.name,       // because dataset has no id
-        price: numericPrice,  // better for totals
-      })
-    );
-
+    dispatch(addItem(plant));
     setAddedToCart((prev) => ({ ...prev, [plant.name]: true }));
   };
 
@@ -345,9 +337,10 @@ function ProductList({ onHomeClick }) {
               Plants
             </a>
           </div>
+
           <div>
             <a href="#" onClick={handleCartClick} style={styleA}>
-              <h1 className="cart">
+              <h1 className="cart" style={{ position: "relative" }}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 256 256"
@@ -366,6 +359,25 @@ function ProductList({ onHomeClick }) {
                     strokeWidth="2"
                   ></path>
                 </svg>
+
+                {/* ✅ Cart quantity badge */}
+                {totalQuantity > 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "0px",
+                      right: "0px",
+                      background: "red",
+                      color: "white",
+                      borderRadius: "50%",
+                      padding: "4px 8px",
+                      fontSize: "16px",
+                      lineHeight: "1",
+                    }}
+                  >
+                    {totalQuantity}
+                  </span>
+                )}
               </h1>
             </a>
           </div>
@@ -410,7 +422,9 @@ function ProductList({ onHomeClick }) {
           </div>
         ) : (
           <div style={{ padding: "20px" }}>
-            <p>Click <b>Plants</b> to view the product list.</p>
+            <p>
+              Click <b>Plants</b> to view the product list.
+            </p>
           </div>
         )
       ) : (
